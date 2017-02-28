@@ -7,6 +7,9 @@ chmod 755 /
 Blacklist kernel: replace #IgnorePkg with IgnorePkg   = linux-armv7 in
 /etc/pacman.conf
 
+cp etc.netctl.eth0 /etc/netctl/eth0
+netctl enable eth0
+
 pacman -Syu
 pacman -S sudo openntpd bindtools btrfs-progs squid
 
