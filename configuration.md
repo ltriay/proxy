@@ -9,6 +9,8 @@ Blacklist kernel: replace #IgnorePkg with IgnorePkg   = linux-armv7 in
 
 cp etc.netctl.eth0 /etc/netctl/eth0
 netctl enable eth0
+rm /etc/systemd/network/eth0.network
+rm /etc/systemd/network/en.network
 
 pacman -Syu
 pacman -S sudo openntpd bindtools btrfs-progs squid
