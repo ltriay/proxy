@@ -26,13 +26,17 @@ sync;sync
 
 ** Install base distrib
 
-wget http://archlinuxarm.org/os/ArchLinuxARM-armv7-latest.tar.gz
-sudo bsdtar -xpf ArchLinuxARM-armv7-latest.tar.gz -C /mnt/a/
-
+> #Edit boot.cmd
 vi boot.cmd
-mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n "BananPI boot script" -d boot.cmd /mnt/boot/boot.scr
 
-umount /mnt/a
+export $MOUNT=/mnt/a
+wget http://archlinuxarm.org/os/ArchLinuxARM-armv7-latest.tar.gz
+sudo bsdtar -xpf ArchLinuxARM-armv7-latest.tar.gz -C $MOUNT
+
+mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n "BananPI boot script" -d boot.cmd $MOUNT/boot/boot.scr
+
+sync;sync
+umount $MOUNT
 
 
 * Kernel compilation
