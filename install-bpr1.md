@@ -56,8 +56,9 @@ Select as builtin (*) same for MDIO (*)
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- zImage modules 
 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
 ls -lh ./arch/arm/boot/zImage
+sudo cp linux-sunxi/arch/arm/boot/zImage $MOUNT/boot/zImage
 ls -ldh ./output/lib/modules/*
-\< cp ./output/lib/modules/* FILE_SYSTEM/lib/modules \>
+\< cp -R ./output/lib/modules/* $MOUNT/lib/modules \>
 sync;sync
 \<eject SD card\>
 
