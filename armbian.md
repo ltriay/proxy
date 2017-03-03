@@ -27,4 +27,21 @@ iface eth0 inet static
 	gateway 192.168.0.254
 dns-nameservers 212.27.40.240 212.27.40.241
 ```
+Squid3 for Debian isn't build with ssl support. We must rebuild it.
+Display the build options with `squid3 -v`.
+Remove # in front of the source line in /etc/apt/sources.list (uncomment)
+
+```
+apt-get update
+apt-get install build-essential pkg-config
+apt-get -y build-dep openssh openssl
+apt-get -y install devscripts build-essential fakeroot
+cd /tmp
+apt-get source squid3
+cd squid*
+sed -i -e "s/--enable-esi/--enable-esi --enable-ssl/g" debian/rules
+```
+Check missing packages with `dpkg-buildpackage -us -uc`
+
+NOTE –enable-ssl-crtd ???
 
