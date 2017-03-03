@@ -1,5 +1,7 @@
 #!/bin/bash
 
+systemctl stop network-manager
+
 ip addr del 192.168.0.1/24 dev eth0
 
 ip link add br0 type bridge
@@ -31,7 +33,12 @@ ip link set up dev lan4
 echo "wan"
 ip link set up dev wan
 
-
+# Modify the nameservers according to your provider
+# This are the DNS of free.fr
+cat <<EOF > /etc/resolv.conf
+nameserver 212.27.40.241
+nameserver 212.27.40.240
+EOF
 
 #ip addr
 bridge link show
