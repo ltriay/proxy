@@ -44,3 +44,47 @@ EOF
 bridge link show
 ip ro
 
+sysctl net.ipv4.ip_forward=1
+
+rm /etc/sysctl.d/30-ipforward.conf
+cat <<EOF > /etc/sysctl.d/30-ipforward.conf
+net.ipv4.ip_forward=1
+net.ipv6.conf.default.forwarding=1
+net.ipv6.conf.all.forwarding=1
+EOF
+
+# Modify squid configuration
+
+
+#
+# Send http packets to squid
+#
+# http://wiki.squid-cache.org/ConfigExamples/Intercept/LinuxDnat
+#
+# The router must have a static IP address. For dynamic IPs use
+# http://wiki.squid-cache.org/ConfigExamples/Intercept/LinuxRedirect
+#
+# Your proxy IP
+SQUIDIP=192.168.0.1
+
+# your proxy listening port
+SQUIDPORT=3128
+SQUIDSSLPORT=3129
+
+# Start if needed, then reset iptables
+# systemctl start iptables
+iptables --flush
+iptables -X
+iptables -t nat -F
+iptables -t nat -X
+iptables -t mangle -F
+iptables -t mangle -X
+
+# Configure transparent proxy using DNAT
+iptables -t nat -A PREROUTING -s $SQUIDIP -p tcp --dport 80 -j ACCEPT
+iptables -t nat -A PREROUTING -s $SQUIDIP -p tcp --dport 443 -j ACCEPT
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination $SQUIDIP:$SQUIDPORT
+iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination $SQUIDIP:$SQUIDSSLPORT
+iptables -t nat -A POSTROUTING -j MASQUERADE
+iptables -t mangle -A PREROUTING -p tcp --dport $SQUIDPORT -j DROP
+iptables -t mangle -A PREROUTING -p tcp --dport $SQUIDSSLPORT -j DROP
