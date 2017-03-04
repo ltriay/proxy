@@ -53,8 +53,8 @@ Blacklist the package from being update.
 echo "squid3 hold" | dpkg --set-selections
 echo "squid3-common hold" | dpkg --set-selections
 ```
-:mag: to revert replace "hold" with "install".
-:mag: squid will not been updated anymore. Watch for security updates !
+:mag: To revert replace "hold" with "install".  
+:mag: Squid will not been updated anymore. Watch for security updates !
 
 For not bumping (not terminating) SSL connection see https://forum.pfsense.org/index.php?topic=123461.0
 
@@ -70,6 +70,50 @@ openssl req -new -newkey rsa:1024 -days 3650 -nodes -x509 -keyout  /etc/pki/squi
 Edit /etc/squid3/squid.conf
 
 ```
-http_port 3128
-https_port 3129 transparent cert=/etc/pki/squid/proxy.pem key=/etc/pki/squid/proxy.key
+http_port 3128 intercept
+https_port 3129 intercept ssl-bump cert=/etc/pki/squid/proxy.pem key=/etc/pki/squid/proxy.key
+http_port 8080
+ssl_bump none all
 ```
+
+* Installing e2guardian
+- Project is here: http://e2guardian.org  
+- Github is here: http://e2guardian.org
+- Packages for x86 are here: https://github.com/e2guardian/e2guardian/releases/tag/v3.5.0
+- Compilation instructions are here: https://groups.google.com/forum/#!topic/e2guardian/lSJlggzIsSA
+
+Default compilation according to documentation (links upper):
+```
+apt-get install adduser perl bzip2 libc6 libgcc1 libpcre3 libstdc++ libtommath0 zlib1g
+mkdir e2guardian-package
+cd e2guardian-package
+git clone https://github.com/e2guardian/e2guardian.git
+cd e2guardian
+./autogen.sh
+./configure '--prefix=/usr' '--enable-clamd=yes' '--with-proxyuser=e2guardian' '--with-proxygroup=e2guardian' '--sysconfdir=/etc' '--localstatedir=/var' '--enable-icap=yes' '--enable-commandline=yes' '--enable-email=yes' '--enable-ntlm=yes' '--enable-trickledm=yes' '--mandir=${prefix}/share/man' '--infodir=${prefix}/share/info' 'CXXFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' 'LDFLAGS=-Wl,-z,relro' 'CPPFLAGS=-D_FORTIFY_SOURCE=2' 'CFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' '--enable-pcre=yes'
+make -j2
+make install
+useradd e2guardian
+mkdir -p /var/log/e2guardian
+touch /var/log/e2guardian//access.log
+chown -R e2guardian:e2guardian /var/log/e2guardian/
+```
+E2guardian configuration
+- filterports = 8081
+- filterip = 127.0.0.1
+
+
+CHANGED '--enable-pcre=no'
+
+* Install privproxy
+```
+sudo -u user bash
+ autoheader
+ autoconf
+ ./configure --disable-toggle --disable-editor  --disable-force  sysconfdir=/etc/privoxy localstatedir=/var --with-user=privproxy --with-group=privproxy
+ make -j2          
+ make -n install  # (to see where all the files will go)
+ make install 
+
+```
+
