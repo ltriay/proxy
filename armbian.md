@@ -27,21 +27,49 @@ iface eth0 inet static
 	gateway 192.168.0.254
 dns-nameservers 212.27.40.240 212.27.40.241
 ```
+
+# Building Squid with ssl support
 Squid3 for Debian isn't build with ssl support. We must rebuild it.
 Display the build options with `squid3 -v`.
 Remove # in front of the source line in /etc/apt/sources.list (uncomment)
 
 ```
 apt-get update
-apt-get install build-essential pkg-config
-apt-get -y build-dep openssh openssl
-apt-get -y install devscripts build-essential fakeroot
+apt-get install build-essential
 cd /tmp
 apt-get source squid3
 cd squid*
 sed -i -e "s/--enable-esi/--enable-esi --enable-ssl/g" debian/rules
 ```
-Check missing packages with `dpkg-buildpackage -us -uc`
+NOTE –enable-ssl-crtd is for creating certificates on the fly. Add it to the build options for SSL termination and full interception of the encrypted connections.
 
-NOTE –enable-ssl-crtd ???
+Check missing packages with `dpkg-buildpackage -us -uc` then run it again to create a package. Build take very long time. Then install the packages.
+```
+dpkg -i squid3_3.4.8-6+deb8u4_armhf.deb
+dpkg -i squid3-common_3.4.8-6+deb8u4_all.deb
+```
+Blacklist the package from being update. 
+```
+echo "squid3 hold" | dpkg --set-selections
+echo "squid3-common hold" | dpkg --set-selections
+```
+:mag: to revert replace "hold" with "install".
+:mag: squid will not been updated anymore. Watch for security updates !
 
+For not bumping (not terminating) SSL connection see https://forum.pfsense.org/index.php?topic=123461.0
+
+## Create certificates
+This is mandatory even if the SSL connections are not terminated. In this scenario we will not use the certificate.
+
+```
+mkdir -p /etc/pki/squid/
+cd /etc/pki/squid/
+openssl req -new -newkey rsa:1024 -days 3650 -nodes -x509 -keyout  /etc/pki/squid/proxy.key -out /etc/pki/squid/proxy.pem
+```
+
+Edit /etc/squid3/squid.conf
+
+```
+http_port 3128
+https_port 3129 transparent cert=/etc/pki/squid/proxy.pem key=/etc/pki/squid/proxy.key
+```
