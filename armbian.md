@@ -76,7 +76,7 @@ http_port 8080
 ssl_bump none all
 ```
 
-* Installing e2guardian
+# Installing e2guardian
 - Project is here: http://e2guardian.org  
 - Github is here: http://e2guardian.org
 - Packages for x86 are here: https://github.com/e2guardian/e2guardian/releases/tag/v3.5.0
@@ -105,7 +105,7 @@ E2guardian configuration
 
 CHANGED '--enable-pcre=no'
 
-* Install privproxy
+# Install privproxy
 ```
 sudo -u user bash
  autoheader
@@ -116,4 +116,25 @@ sudo -u user bash
  make install 
 
 ```
+In /etc/init.d/privoxy modify line `P_CONF_FILE=/usr/local/etc/privoxy/config` with `P_CONF_FILE=/etc/privoxy/config`.
 
+# Install mitmproxy
+Installing python3.6
+```
+wget https://www.python.org/ftp/python/3.6.0/Python-3.6.0.tar.xz
+xz -d Python-3.6.0.tar.xz 
+tar xvf Python-3.6.0.tar
+apt-get install build-essential
+apt-get install libbz2-dev libsqlite3-dev libreadline-dev zlib1g-dev libssl-dev libgdbm-dev libncurses5-dev liblzma-dev
+./configure OR ./configure --prefix=/opt/python --enable-optimizations
+make -j2
+make install OR make altinstall OR ADD -j2
+
+apt-get install virtualenv
+```
+
+```
+sudo apt-get install python3-dev python3-pip libffi-dev libssl-dev
+virtualenv --python=/usr/bin/pythonX.Y python_for_mitmproxy
+pip3 install --user mitmproxy
+```
