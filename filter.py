@@ -16,10 +16,11 @@ class Filter:
 			print("Flow matches filter:")
 			print(flow)
 
-	def request(flow):
+	def request(self, flow):
 		# pretty_url takes the "Host" header of the request into account, which
 		# is useful in transparent mode where we usually only have the IP otherwise.
 
+		print("Request")	
 		if flow.request.pretty_url == "http://latribune.fr/":
 			flow.response = http.HTTPResponse.make(
 		    		200,  # (optional) status code
@@ -28,6 +29,16 @@ class Filter:
 			)
 
 def start():
+	# Lists:  http://dsi.ut-capitole.fr/blacklists/download/blacklists.tar.gz
 	ctx.log.info("This is some informative text.")
+	filters = "~u latribune.fr"
+	for i in range(0,2500):
+		filters = " ~u test" + str(i) + " | " + filters
+	for i in range(0,2500):
+		filters = " ~bs test" + str(i) + " | " + filters
+	# return Filter("~u latribune.fr")
+	print("Compiling regexp")
+	flowfilter.match("aaa", filters)
+	print("Regexp compiled")
 	ctx.log.error("This is an error.")
-	return Filter("~u lioneltriay.net")
+	return Filter(filters)
