@@ -131,6 +131,19 @@ E2guardian configuration
 
 :mag: There is an issue with the version of libpcre, therfore it is disabled during the compilation with '--enable-pcre=no'
 
+# Using black list
+## Installation and configuration
+Configure router networking (see network.sh)
+```
+apt-get install ipset
+ipset -N blacklist4 iphash --hashsize 4096 --maxelem 200000 --family inet
+ipset -N blacklist6 iphash --hashsize 4096 --maxelem 200000 --family inet6
+iptables -t nat -A PREROUTING -m set --match-set blacklist4 dst -j DNAT --to-destination 127.0.0.1
+ip6tables -t nat -A PREROUTING -m set --match-set blacklist6 dst -j DNAT --to-destination ::1
+```
+## Downloading
+## Processing
+
 # Distribute proxy configuration
 
 https://en.wikipedia.org/wiki/Web_Proxy_Auto-Discovery_Protocol
