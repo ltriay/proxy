@@ -74,11 +74,26 @@ SQUIDSSLPORT=3129
 # Start if needed, then reset iptables
 # systemctl start iptables
 iptables --flush
+iptables -P INPUT ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
 iptables -X
+iptables -t filter -F
+iptables -t raw -F
 iptables -t nat -F
 iptables -t nat -X
 iptables -t mangle -F
 iptables -t mangle -X
+ipset -F
+ipset -X
+# IPv6
+ip6tables -F INPUT
+ip6tables -F OUTPUT
+ip6tables -F FORWARD
+ip6tables -F
+#ip6tables -P INPUT ACCEPT
+#ip6tables -P OUTPUT ACCEPT
+#ip6tables -P FORWARD ACCEPT
 
 # Configure transparent proxy using DNAT
 iptables -t nat -A PREROUTING -s $SQUIDIP -p tcp --dport 80 -j ACCEPT
@@ -88,3 +103,5 @@ iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination $SQUID
 iptables -t nat -A POSTROUTING -j MASQUERADE
 iptables -t mangle -A PREROUTING -p tcp --dport $SQUIDPORT -j DROP
 iptables -t mangle -A PREROUTING -p tcp --dport $SQUIDSSLPORT -j DROP
+
+# Missing IPv6
