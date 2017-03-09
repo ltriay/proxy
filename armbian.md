@@ -1,4 +1,4 @@
-# Installation
+# OS installation
 
 Download mainline Debian kernel for Lamobo R1 https://www.armbian.com/lamobo-r1/
 
@@ -27,8 +27,22 @@ iface eth0 inet static
 	gateway 192.168.0.254
 dns-nameservers 212.27.40.240 212.27.40.241
 ```
+# Proxy setup
+At this day there is no open source software able to act as a transparent proxy and filter SSL. E2guardian v4.1 should be able to do the job but it's not available yet. The architecture selected here is the following:  
 
-# Building Squid with ssl support
+- Transparently intercepting http and https
+```
+Browser using http  --> | --> iptables --> e2guardian --> squid3 --> | --> outside world  
+Browser using https --> | --> iptables -----------------> squid3 --> | --> outside world
+```
+- Client has configured proxy
+```
+Browser             --> | ---------------> e2guardian --> squid3 --> | --> outside world  
+```
+
+Therefore https connexions on clients not using proxy configuration will not be filtered. 
+
+## Building Squid with ssl support
 Squid3 for Debian isn't build with ssl support. We must rebuild it.
 Display the build options with `squid3 -v`.
 Remove # in front of the source line in /etc/apt/sources.list (uncomment)
@@ -58,7 +72,7 @@ echo "squid3-common hold" | dpkg --set-selections
 
 For not bumping (not terminating) SSL connection see https://forum.pfsense.org/index.php?topic=123461.0
 
-## Create certificates
+### Create certificates
 This is mandatory even if the SSL connections are not terminated. In this scenario we will not use the certificate.
 
 ```
@@ -67,16 +81,17 @@ cd /etc/pki/squid/
 openssl req -new -newkey rsa:1024 -days 3650 -nodes -x509 -keyout  /etc/pki/squid/proxy.key -out /etc/pki/squid/proxy.pem
 ```
 
+## Setup squid
 Edit /etc/squid3/squid.conf
 
 ```
-http_port 3128 intercept
+#http_port 3128 intercept
 https_port 3129 intercept ssl-bump cert=/etc/pki/squid/proxy.pem key=/etc/pki/squid/proxy.key
 http_port 8080
 ssl_bump none all
 ```
 
-# Installing e2guardian
+## Installing e2guardian
 - Project is here: http://e2guardian.org  
 - Github is here: http://e2guardian.org
 - Packages for x86 are here: https://github.com/e2guardian/e2guardian/releases/tag/v3.5.0
@@ -90,22 +105,31 @@ cd e2guardian-package
 git clone https://github.com/e2guardian/e2guardian.git
 cd e2guardian
 ./autogen.sh
-./configure '--prefix=/usr' '--enable-clamd=yes' '--with-proxyuser=e2guardian' '--with-proxygroup=e2guardian' '--sysconfdir=/etc' '--localstatedir=/var' '--enable-icap=yes' '--enable-commandline=yes' '--enable-email=yes' '--enable-ntlm=yes' '--enable-trickledm=yes' '--mandir=${prefix}/share/man' '--infodir=${prefix}/share/info' 'CXXFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' 'LDFLAGS=-Wl,-z,relro' 'CPPFLAGS=-D_FORTIFY_SOURCE=2' 'CFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' '--enable-pcre=yes'
+./configure '--prefix=/usr' '--enable-clamd=yes' '--with-proxyuser=e2guardian' '--with-proxygroup=e2guardian' '--sysconfdir=/etc' '--localstatedir=/var' '--enable-icap=yes' '--enable-commandline=yes' '--enable-email=yes' '--enable-ntlm=yes' '--enable-trickledm=yes' '--mandir=${prefix}/share/man' '--infodir=${prefix}/share/info' 'CXXFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' 'LDFLAGS=-Wl,-z,relro' 'CPPFLAGS=-D_FORTIFY_SOURCE=2' 'CFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' '--enable-pcre=no'
 make -j2
 make install
 useradd e2guardian
 mkdir -p /var/log/e2guardian
 touch /var/log/e2guardian//access.log
 chown -R e2guardian:e2guardian /var/log/e2guardian/
+mkdir -p /cache/e2guardian/tmp
 ```
 E2guardian configuration
-- filterports = 8081
+- filterports = 8888
 - filterip = 127.0.0.1
+- filecachedir = '/cache/e2guardian/tmp'
+- minchildren = 5 
+- minsparechildren = 5
+- preforkchildren = 5
+- maxsparechildren = 16
 
 
-CHANGED '--enable-pcre=no'
+:mag: There is an issue with the version of libpcre, therfore it is disabled during the compilation with '--enable-pcre=no'
 
-# Install privproxy
+# Other tested software
+
+## Privproxy
+Provoxy is an alternative to e2guardian, it was tested but lack of ssl support with transparent proxy too. 
 ```
 sudo -u user bash
  autoheader
@@ -118,8 +142,9 @@ sudo -u user bash
 ```
 In /etc/init.d/privoxy modify line `P_CONF_FILE=/usr/local/etc/privoxy/config` with `P_CONF_FILE=/etc/privoxy/config`.
 
-# Install mitmproxy
-Installing python3.6
+## Install mitmproxy
+Mitmproxy is a nice too for security testing but doesn't handle large set of rules.
+### Installing python3.6
 ```
 wget https://www.python.org/ftp/python/3.6.0/Python-3.6.0.tar.xz
 xz -d Python-3.6.0.tar.xz 
@@ -132,9 +157,18 @@ make install OR make altinstall OR ADD -j2
 
 apt-get install virtualenv
 ```
-
+### Installing mitmproxy
 ```
 sudo apt-get install python3-dev python3-pip libffi-dev libssl-dev
 virtualenv --python=/usr/bin/pythonX.Y python_for_mitmproxy
+#export PYTHONUSERBASE=/myappenv
 pip3 install --user mitmproxy
+pip install --user mitmproxy[examples]
 ```
+### Running mitmproxy
+* It's not possible to chain proxies when using transparent mode. 
+* Log must be rotated (TBD)
+```
+mitmdump -T --keepserving  2>/var/log/mitmdump
+```
+
