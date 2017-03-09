@@ -37,10 +37,15 @@ Browser using https --> | --> iptables -----------------> squid3 --> | --> outsi
 ```
 - Client has configured proxy
 ```
-Browser             --> | ---------------> e2guardian --> squid3 --> | --> outside world  
+Browser             --> | --> iptables --> e2guardian --> squid3 --> | --> outside world  
 ```
 
-Therefore https connexions on clients not using proxy configuration will not be filtered. 
+- Https connexions on clients not using proxy configuration will not be filtered. 
+- Iptables is in charge of filtering blacklisted IPs.
+- Name resolution facility is in charge of filtering blacklisted domain names.
+- E2guardian is in charge of filtering content based on keywords for unencrypted connexions.  
+
+SSL termination / SSL bump can be activated, it allow decrypt SSL, therefore filtering on keywords is available even with https. But beware of the consequences. 
 
 ## Building Squid with ssl support
 Squid3 for Debian isn't build with ssl support. We must rebuild it.
@@ -126,6 +131,10 @@ E2guardian configuration
 
 :mag: There is an issue with the version of libpcre, therfore it is disabled during the compilation with '--enable-pcre=no'
 
+# Distribute proxy configuration
+
+https://en.wikipedia.org/wiki/Web_Proxy_Auto-Discovery_Protocol
+
 # Other tested software
 
 ## Privproxy
@@ -142,7 +151,7 @@ sudo -u user bash
 ```
 In /etc/init.d/privoxy modify line `P_CONF_FILE=/usr/local/etc/privoxy/config` with `P_CONF_FILE=/etc/privoxy/config`.
 
-## Install mitmproxy
+## Mitmproxy
 Mitmproxy is a nice too for security testing but doesn't handle large set of rules.
 ### Installing python3.6
 ```
