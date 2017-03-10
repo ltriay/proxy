@@ -102,7 +102,7 @@ cd e2guardian-package
 git clone https://github.com/e2guardian/e2guardian.git
 cd e2guardian
 ./autogen.sh
-./configure '--prefix=/usr' '--enable-clamd=yes' '--with-proxyuser=e2guardian' '--with-proxygroup=e2guardian' '--sysconfdir=/etc' '--localstatedir=/var' '--enable-icap=yes' '--enable-commandline=yes' '--enable-email=yes' '--enable-ntlm=yes' '--enable-trickledm=yes' '--mandir=${prefix}/share/man' '--infodir=${prefix}/share/info' 'CXXFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' 'LDFLAGS=-Wl,-z,relro' 'CPPFLAGS=-D_FORTIFY_SOURCE=2' 'CFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' '--enable-pcre=no'
+./configure '--prefix=/usr' '--enable-clamd=yes' '--with-proxyuser=e2guardian' '--with-proxygroup=e2guardian' '--sysconfdir=/etc' '--localstatedir=/var' '--enable-icap=yes' '--enable-commandline=yes' '--enable-email=yes' '--enable-ntlm=yes' '--enable-trickledm=yes' '--mandir=${prefix}/share/man' '--infodir=${prefix}/share/info' 'CXXFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' 'LDFLAGS=-Wl,-z,relro' 'CPPFLAGS=-D_FORTIFY_SOURCE=2' 'CFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' '--enable-pcre=no' --enable-sslmitm=yes
 make -j2
 make install
 useradd e2guardian
@@ -110,16 +110,24 @@ mkdir -p /var/log/e2guardian
 touch /var/log/e2guardian//access.log
 chown -R e2guardian:e2guardian /var/log/e2guardian/
 mkdir -p /cache/e2guardian/tmp
+mkdir /mnt/cache/e2guardian/generatedcerts/
+chown e2guardian:e2guardian /mnt/cache/e2guardian/generatedcerts/
+
 ```
 E2guardian configuration
-- filterports = 8888
+- filterports = 8080
+- proxyport = 8888
 - filterip = 127.0.0.1
 - filecachedir = '/cache/e2guardian/tmp'
 - minchildren = 5 
 - minsparechildren = 5
 - preforkchildren = 5
 - maxsparechildren = 16
-
+- cacertificatepath = '/etc/pki/e2guardian/my_rootCA.crt'
+- caprivatekeypath = '/etc/pki/e2guardian/private_root.pem'
+- certprivatekeypath = '/etc/pki/e2guardian/private_cert.pem'
+e2guardianf1.conf:
+- sslmitm = on 
 
 :mag: There is an issue with the version of libpcre, therfore it is disabled during the compilation with '--enable-pcre=no'
 

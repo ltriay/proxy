@@ -98,10 +98,14 @@ ip6tables -F
 # Configure transparent proxy using DNAT
 iptables -t nat -A PREROUTING -s $PROXY_IP -p tcp --dport 80 -j ACCEPT
 iptables -t nat -A PREROUTING -s $PROXY_IP -p tcp --dport 443 -j ACCEPT
+iptables -t nat -A PREROUTING -p tcp --dport $HTTP_PORT -j ACCEPT
 iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination $PROXY_IP:$HTTP_PORT
 iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination $PROXY_IP:$HTTPS_PORT
 iptables -t nat -A POSTROUTING -j MASQUERADE
 iptables -t mangle -A PREROUTING -p tcp --dport $HTTP_PORT -j DROP
 iptables -t mangle -A PREROUTING -p tcp --dport $HTTPS_PORT -j DROP
+# Reject http/https connexions if nat is dissabled
+iptables -t mangle -A PREROUTING -p tcp --dport 80 -j REJECT
+iptables -t mangle -A PREROUTING -p tcp --dport 443 -j REJECT
 
 # Missing IPv6
