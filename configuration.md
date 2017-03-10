@@ -115,6 +115,7 @@ chown e2guardian:e2guardian /mnt/cache/e2guardian/generatedcerts/
 
 ```
 E2guardian configuration
+- language='<select your language for ex french>'
 - filterports = 8080
 - proxyport = 8888
 - filterip = 127.0.0.1
@@ -145,6 +146,8 @@ ip6tables -t nat -A PREROUTING -m set --match-set blacklist6 dst -j DNAT --to-de
 ## Processing
 
 # Distribute proxy configuration
+## Installing nginx
+`apt-get install nginx`
 
 https://en.wikipedia.org/wiki/Web_Proxy_Auto-Discovery_Protocol
 
