@@ -4,14 +4,6 @@ Download mainline Debian kernel for Lamobo R1 https://www.armbian.com/lamobo-r1/
 
 Install Armbian image according to https://docs.armbian.com/User-Guide_Getting-Started/#how-to-check-download-authenticity
 
-```
-apt-get install docker
-apt-get install aufs-tools 
-```
-Recommanded package cgroupfs-mount cannot be installed because it breaks dependencies.
-```
-usermod user -a -G docker
-```
 Show an available btrfs filesystem `blkid` UUID is used below.
 ```
 cat <<EOF > /etc/fstab
