@@ -1,0 +1,7 @@
+ipset -A blacklist4 10.10.5.5
+ipset -A blacklist4 10.10.5.6
+ipset -A blacklist4 10.10.5.7
+ipset -A blacklist4 192.165.0.2
+ipset -A blacklist4 192.165.0.3
+ipset -A blacklist4 192.165.0.4
+ipset -A blacklist6 2848:2:527b:9dff:fada:9f9e:1:1

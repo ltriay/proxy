@@ -1,0 +1,25 @@
+10.10.5.5
+10.10.5.6 
+ 10.10.5.7   
+pass
+pass.python.org
+fb.org
+pyth(on.org
+ go.org 
+#Comment
+# Comment comment
+    
+python.org/help/ggg
+192.165.0.1/24
+192.165.0.2 python.org  python
+192.165.0.3 192.165.0.4
+192.165.0.5 192.165.0.6/24 192.165.0.7
+
+64:ff9b::1 ibm.com ibm
+1010:2:527b:9dff:fada:9f9e:1:1 xxxx.xxxx
+4848:2:527b:9dff:fada:9f9e:1:1 test.com
+2848:2:527b:9dff:fada:9f9e:1:1 tttt.com
+f848:2:527b:9dff:fada:9f9e:1:1 aaaa.com aaa
+
+python.ggg
+
