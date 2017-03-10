@@ -1,78 +1,196 @@
+# OS installation
 
-* Archlinux configuration
+Download mainline Debian kernel for Lamobo R1 https://www.armbian.com/lamobo-r1/
 
-chown root:root /
-chmod 755 /
+Install Armbian image according to https://docs.armbian.com/User-Guide_Getting-Started/#how-to-check-download-authenticity
 
-Blacklist kernel: replace #IgnorePkg with IgnorePkg   = linux-armv7 in
-/etc/pacman.conf
-
-cp etc.netctl.eth0 /etc/netctl/eth0
-netctl enable eth0
-rm /etc/systemd/network/eth0.network
-rm /etc/systemd/network/en.network
-
-pacman -Syu
-pacman -S sudo openntpd bindtools btrfs-progs squid
-
-cat KEYMAP=fr-latin1 EOF>>
-/etc/vconsole.conf
+```
+apt-get install docker
+apt-get install aufs-tools 
+```
+Recommanded package cgroupfs-mount cannot be installed because it breaks dependencies.
+```
+usermod user -a -G docker
+```
+Show an available btrfs filesystem `blkid` UUID is used below.
+```
+cat <<EOF > /etc/fstab
+UUID=8a0528f0-9899-4800-93cb-814b30ed712a	/mnt/cache	btrfs	defaults,noatime,nodiratime,compress=lzo			0	2
 EOF
+```
+Setup static IP, change /etc/network/interfaces with below content. This configuration works for the French provider free.fr. For other providers modify the parameters accordingly.
+```
+auto eth0
+iface eth0 inet static
+	address	192.168.0.1
+	netmask 255.255.255.0
+	gateway 192.168.0.254
+dns-nameservers 212.27.40.240 212.27.40.241
+```
+# Proxy setup
+At this day there is no open source software able to act as a transparent proxy and filter SSL. E2guardian v4.1 should be able to do the job but it's not available yet. The architecture selected here is the following:  
 
-Replace following line in /etc/sudoer
-# %sudo	ALL=(ALL) ALL
-with
-%sudo	ALL=(ALL) ALL
-groupadd sudo
-usermod alarm -a -G sudo
+- Transparently intercepting http and https
+```
+Browser using http  --> | --> iptables --> e2guardian --> squid3 --> | --> outside world  
+Browser using https --> | --> iptables -----------------> squid3 --> | --> outside world
+```
+- Client has configured proxy
+```
+Browser             --> | --> iptables --> e2guardian --> squid3 --> | --> outside world  
+```
 
-mkdir -p /mnt/cache
-Use fdisk /dev/sda (see man fdisk) to create 2 partitions
-mkfs.btrfs -L cache /dev/sda2
+- Https connexions on clients not using proxy configuration will not be filtered. 
+- Iptables is in charge of filtering blacklisted IPs.
+- Name resolution facility is in charge of filtering blacklisted domain names.
+- E2guardian is in charge of filtering content based on keywords for unencrypted connexions.  
 
-* Squid configuration
+SSL termination / SSL bump can be activated, it allow decrypt SSL, therefore filtering on keywords is available even with https. But beware of the consequences. 
 
-touch /var/log/squid/cache.log
-chown proxy:proxy /var/log/squid/cache.log
-mkdir -p /mnt/cache/squid
-chown proxy:proxy /mnt/cache/squid
+## Building Squid with ssl support
+Squid3 for Debian isn't build with ssl support. We must rebuild it.
+Display the build options with `squid3 -v`.
+Remove # in front of the source line in /etc/apt/sources.list (uncomment)
 
-cat /etc/squid/squid.conf >>EOF
-cache_dir diskd /mnt/cache/squid 2000 16 256
-dns_defnames on
-visible_hostname alarm
-EOF
-
-squid -k check
-squid -zN
-systemctl enable squid
-systemctl start squid
-
-** Yaourt installation
-
-sudo -u alarm bash
-pacman -S git binutils gcc make fakeroot pkg-config --noconfirm
+```
+apt-get update
+apt-get install build-essential
 cd /tmp
-git clone https://aur.archlinux.org/package-query.git
-cd package-query
-makepkg -si
-cd ..
-git clone https://aur.archlinux.org/yaourt.git
-cd yaourt
-makepkg -si --noconfirm
-cd ..
-rm -Rf package-query
-exit
+apt-get source squid3
+cd squid*
+sed -i -e "s/--enable-esi/--enable-esi --enable-ssl/g" debian/rules
+```
+NOTE –enable-ssl-crtd is for creating certificates on the fly. Add it to the build options for SSL termination and full interception of the encrypted connections.
 
-* e2guardian installation
+Check missing packages with `dpkg-buildpackage -us -uc` then run it again to create a package. Build take very long time. Then install the packages.
+```
+dpkg -i squid3_3.4.8-6+deb8u4_armhf.deb
+dpkg -i squid3-common_3.4.8-6+deb8u4_all.deb
+```
+Blacklist the package from being update. 
+```
+echo "squid3 hold" | dpkg --set-selections
+echo "squid3-common hold" | dpkg --set-selections
+```
+:mag: To revert replace "hold" with "install".  
+:mag: Squid will not been updated anymore. Watch for security updates !
 
-https://github.com/e2guardian/e2guardian
+For not bumping (not terminating) SSL connection see https://forum.pfsense.org/index.php?topic=123461.0
 
-pacman -S patch automake autoconf
-yaourt -S e2guardian
-Edit PKGBUILD and add armv7h architecture 
+### Create certificates
+This is mandatory even if the SSL connections are not terminated. In this scenario we will not use the certificate.
 
-* Notes
+```
+mkdir -p /etc/pki/squid/
+cd /etc/pki/squid/
+openssl req -new -newkey rsa:1024 -days 3650 -nodes -x509 -keyout  /etc/pki/squid/proxy.key -out /etc/pki/squid/proxy.pem
+```
 
-/etc/fstab
-LABEL=cache /mnt/cache btrfs defaults,noatime,compress=lzo,commit=120 1 0
+## Setup squid
+Edit /etc/squid3/squid.conf
+
+```
+#http_port 3128 intercept
+https_port 3129 intercept ssl-bump cert=/etc/pki/squid/proxy.pem key=/etc/pki/squid/proxy.key
+http_port 8080
+ssl_bump none all
+```
+
+## Installing e2guardian
+- Project is here: http://e2guardian.org  
+- Github is here: http://e2guardian.org
+- Packages for x86 are here: https://github.com/e2guardian/e2guardian/releases/tag/v3.5.0
+- Compilation instructions are here: https://groups.google.com/forum/#!topic/e2guardian/lSJlggzIsSA
+
+Default compilation according to documentation (links upper):
+```
+apt-get install adduser perl bzip2 libc6 libgcc1 libpcre3 libstdc++ libtommath0 zlib1g
+mkdir e2guardian-package
+cd e2guardian-package
+git clone https://github.com/e2guardian/e2guardian.git
+cd e2guardian
+./autogen.sh
+./configure '--prefix=/usr' '--enable-clamd=yes' '--with-proxyuser=e2guardian' '--with-proxygroup=e2guardian' '--sysconfdir=/etc' '--localstatedir=/var' '--enable-icap=yes' '--enable-commandline=yes' '--enable-email=yes' '--enable-ntlm=yes' '--enable-trickledm=yes' '--mandir=${prefix}/share/man' '--infodir=${prefix}/share/info' 'CXXFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' 'LDFLAGS=-Wl,-z,relro' 'CPPFLAGS=-D_FORTIFY_SOURCE=2' 'CFLAGS=-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' '--enable-pcre=no'
+make -j2
+make install
+useradd e2guardian
+mkdir -p /var/log/e2guardian
+touch /var/log/e2guardian//access.log
+chown -R e2guardian:e2guardian /var/log/e2guardian/
+mkdir -p /cache/e2guardian/tmp
+```
+E2guardian configuration
+- filterports = 8888
+- filterip = 127.0.0.1
+- filecachedir = '/cache/e2guardian/tmp'
+- minchildren = 5 
+- minsparechildren = 5
+- preforkchildren = 5
+- maxsparechildren = 16
+
+
+:mag: There is an issue with the version of libpcre, therfore it is disabled during the compilation with '--enable-pcre=no'
+
+# Using black list
+## Installation and configuration
+Configure router networking (see network.sh)
+```
+apt-get install ipset
+ipset -N blacklist4 iphash --hashsize 4096 --maxelem 200000 --family inet
+ipset -N blacklist6 iphash --hashsize 4096 --maxelem 200000 --family inet6
+iptables -t nat -A PREROUTING -m set --match-set blacklist4 dst -j DNAT --to-destination 127.0.0.1
+ip6tables -t nat -A PREROUTING -m set --match-set blacklist6 dst -j DNAT --to-destination ::1
+```
+## Downloading
+## Processing
+
+# Distribute proxy configuration
+
+https://en.wikipedia.org/wiki/Web_Proxy_Auto-Discovery_Protocol
+
+# Other tested software
+
+## Privproxy
+Provoxy is an alternative to e2guardian, it was tested but lack of ssl support with transparent proxy too. 
+```
+sudo -u user bash
+ autoheader
+ autoconf
+ ./configure --disable-toggle --disable-editor  --disable-force  sysconfdir=/etc/privoxy localstatedir=/var --with-user=privproxy --with-group=privproxy
+ make -j2          
+ make -n install  # (to see where all the files will go)
+ make install 
+
+```
+In /etc/init.d/privoxy modify line `P_CONF_FILE=/usr/local/etc/privoxy/config` with `P_CONF_FILE=/etc/privoxy/config`.
+
+## Mitmproxy
+Mitmproxy is a nice too for security testing but doesn't handle large set of rules.
+### Installing python3.6
+```
+wget https://www.python.org/ftp/python/3.6.0/Python-3.6.0.tar.xz
+xz -d Python-3.6.0.tar.xz 
+tar xvf Python-3.6.0.tar
+apt-get install build-essential
+apt-get install libbz2-dev libsqlite3-dev libreadline-dev zlib1g-dev libssl-dev libgdbm-dev libncurses5-dev liblzma-dev
+./configure OR ./configure --prefix=/opt/python --enable-optimizations
+make -j2
+make install OR make altinstall OR ADD -j2
+
+apt-get install virtualenv
+```
+### Installing mitmproxy
+```
+sudo apt-get install python3-dev python3-pip libffi-dev libssl-dev
+virtualenv --python=/usr/bin/pythonX.Y python_for_mitmproxy
+#export PYTHONUSERBASE=/myappenv
+pip3 install --user mitmproxy
+pip install --user mitmproxy[examples]
+```
+### Running mitmproxy
+* It's not possible to chain proxies when using transparent mode. 
+* Log must be rotated (TBD)
+```
+mitmdump -T --keepserving  2>/var/log/mitmdump
+```
+
