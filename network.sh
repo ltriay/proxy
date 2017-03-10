@@ -64,12 +64,12 @@ EOF
 # The router must have a static IP address. For dynamic IPs use
 # http://wiki.squid-cache.org/ConfigExamples/Intercept/LinuxRedirect
 #
-# Your proxy IP
-SQUIDIP=192.168.0.1
+# Router/proxy private
+PROXY_IP=192.168.0.1
 
-# your proxy listening port
-SQUIDPORT=3128
-SQUIDSSLPORT=3129
+# Proxy listening port
+HTTP_PORT=8080
+HTTPS_PORT=3129
 
 # Start if needed, then reset iptables
 # systemctl start iptables
@@ -96,12 +96,12 @@ ip6tables -F
 #ip6tables -P FORWARD ACCEPT
 
 # Configure transparent proxy using DNAT
-iptables -t nat -A PREROUTING -s $SQUIDIP -p tcp --dport 80 -j ACCEPT
-iptables -t nat -A PREROUTING -s $SQUIDIP -p tcp --dport 443 -j ACCEPT
-iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination $SQUIDIP:$SQUIDPORT
-iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination $SQUIDIP:$SQUIDSSLPORT
+iptables -t nat -A PREROUTING -s $PROXY_IP -p tcp --dport 80 -j ACCEPT
+iptables -t nat -A PREROUTING -s $PROXY_IP -p tcp --dport 443 -j ACCEPT
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination $PROXY_IP:$HTTP_PORT
+iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination $PROXY_IP:$HTTPS_PORT
 iptables -t nat -A POSTROUTING -j MASQUERADE
-iptables -t mangle -A PREROUTING -p tcp --dport $SQUIDPORT -j DROP
-iptables -t mangle -A PREROUTING -p tcp --dport $SQUIDSSLPORT -j DROP
+iptables -t mangle -A PREROUTING -p tcp --dport $HTTP_PORT -j DROP
+iptables -t mangle -A PREROUTING -p tcp --dport $HTTPS_PORT -j DROP
 
 # Missing IPv6
