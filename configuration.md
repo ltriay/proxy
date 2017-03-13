@@ -24,12 +24,16 @@ At this day there is no open source software able to act as a transparent proxy 
 
 - Transparently intercepting http and https
 ```
+                        +---------------- ROUTER --------------------+
 Browser using http  --> | --> iptables --> e2guardian --> squid3 --> | --> outside world  
 Browser using https --> | --> iptables -----------------> squid3 --> | --> outside world
+                        +--------------------------------------------+
 ```
 - Client has configured proxy
 ```
+                        +---------------- ROUTER --------------------+
 Browser             --> | --> iptables --> e2guardian --> squid3 --> | --> outside world  
+                        +--------------------------------------------+
 ```
 
 - Https connexions on clients not using proxy configuration will not be filtered. 
@@ -115,7 +119,7 @@ chown e2guardian:e2guardian /mnt/cache/e2guardian/generatedcerts/
 
 ```
 E2guardian configuration
-- language='<select your language for ex french>'
+- language='\<select your language for ex french\>'
 - filterports = 8080
 - proxyport = 8888
 - filterip = 127.0.0.1
