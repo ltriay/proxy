@@ -168,13 +168,17 @@ rm index.nginx-debian.html
 systemctl restart nginx
 ```
 
-## Downloading lists
-## Processing lists
+# To do
+- Downloading and processing lists
+- Distribute proxy configuration https://en.wikipedia.org/wiki/Web_Proxy_Auto-Discovery_Protocol
+  - Using web server
+  - Using DHCP
+  - Using configuration file
+- IPv6
+  - "NAT"
+  - Router advertisement
+- Statistics and logs
 
-# Distribute proxy configuration
-## Using web server
-## Using DHCP
-## Using configuration file
 
-https://en.wikipedia.org/wiki/Web_Proxy_Auto-Discovery_Protocol
+
 
