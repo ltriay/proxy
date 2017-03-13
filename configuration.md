@@ -1,10 +1,14 @@
 # OS installation
 
-Download mainline Debian kernel for Lamobo R1 https://www.armbian.com/lamobo-r1/
+Download mainline Debian kernel for Lamobo R1 https://www.armbian.com/lamobo-r1/ or you own device.
 
-Install Armbian image according to https://docs.armbian.com/User-Guide_Getting-Started/#how-to-check-download-authenticity
+Install Armbian image according the [Armbian documentation](https://docs.armbian.com/User-Guide_Getting-Started).
 
-Show an available btrfs filesystem `blkid` UUID is used below.
+The Lamobo R1/Banana Pi has a SATA port. /mnt/cache will be used to mount a partition of a SATA disk connected to this port. You should use a SSD. On a Raspberry you have to use the SD card or an external disk (recommended). Armbian can be installed on this disk instead of the SD card. This is the preferred way to do. Follow [this how-to](https://docs.armbian.com/User-Guide_Getting-Started/#how-to-install-to-emmc-nand-sata-usb).
+
+Add a partition as btrfs file system Archlinux doc about btrfs is nice [here](https://wiki.archlinux.org/index.php/Btrfs).
+
+Show an available btrfs filesystem by using `blkid`, the UUID is used below (replace with your own UUID).
 ```
 cat <<EOF > /etc/fstab
 UUID=8a0528f0-9899-4800-93cb-814b30ed712a	/mnt/cache	btrfs	defaults,noatime,nodiratime,compress=lzo			0	2
@@ -20,7 +24,7 @@ iface eth0 inet static
 dns-nameservers 212.27.40.240 212.27.40.241
 ```
 # Proxy setup
-At this day there is no open source software able to act as a transparent proxy and filter SSL. E2guardian v4.1 should be able to do the job but it's not available yet. The architecture selected here is the following:  
+At this day there is no open source software able to act as a transparent proxy and able to filter SSL. E2guardian v4.1 should be able to do the job but it's not available yet. The architecture selected is the following. With the configuration describe below, transparent proxy and regular proxy are both available but don't give the same functionalities.  
 
 - Transparently intercepting http and https
 ```
@@ -41,7 +45,7 @@ Browser             --> | --> iptables --> e2guardian --> squid3 --> | --> outsi
 - Name resolution facility is in charge of filtering blacklisted domain names.
 - E2guardian is in charge of filtering content based on keywords for unencrypted connexions.  
 
-SSL termination / SSL bump can be activated, it allow decrypt SSL, therefore filtering on keywords is available even with https. But beware of the consequences. 
+[SSL termination](https://en.wikipedia.org/wiki/TLS_termination_proxy) also named SSL bump can be activated - this is explained in this documentation -, it allow to decrypt SSL, therefore filtering on keywords is available even with https. But beware of the consequences, the security of the users will be LOWERED.
 
 ## Building Squid with ssl support
 Squid3 for Debian isn't build with ssl support. We must rebuild it.
@@ -63,7 +67,7 @@ Check missing packages with `dpkg-buildpackage -us -uc` then run it again to cre
 dpkg -i squid3_3.4.8-6+deb8u4_armhf.deb
 dpkg -i squid3-common_3.4.8-6+deb8u4_all.deb
 ```
-Blacklist the package from being update. 
+Blacklist the packages from being updated. 
 ```
 echo "squid3 hold" | dpkg --set-selections
 echo "squid3-common hold" | dpkg --set-selections
@@ -71,7 +75,7 @@ echo "squid3-common hold" | dpkg --set-selections
 :mag: To revert replace "hold" with "install".  
 :mag: Squid will not been updated anymore. Watch for security updates !
 
-For not bumping (not terminating) SSL connection see https://forum.pfsense.org/index.php?topic=123461.0
+For not terminating SSL connection see [here](https://forum.pfsense.org/index.php?topic=123461.0).
 
 ### Create certificates
 This is mandatory even if the SSL connections are not terminated. In this scenario we will not use the certificate.
@@ -91,12 +95,13 @@ https_port 3129 intercept ssl-bump cert=/etc/pki/squid/proxy.pem key=/etc/pki/sq
 http_port 8080
 ssl_bump none all
 ```
+Launch squid3 with `systemctl start squid3`.
 
 ## Installing e2guardian
-- Project is here: http://e2guardian.org  
-- Github is here: http://e2guardian.org
-- Packages for x86 are here: https://github.com/e2guardian/e2guardian/releases/tag/v3.5.0
-- Compilation instructions are here: https://groups.google.com/forum/#!topic/e2guardian/lSJlggzIsSA
+- Project is [here](http://e2guardian.org).
+- Github is [here](http://e2guardian.org).
+- Packages for x86 are [here](https://github.com/e2guardian/e2guardian/releases/tag/v3.5.0).
+- Compilation instructions are [here](https://groups.google.com/forum/#!topic/e2guardian/lSJlggzIsSA).
 
 Default compilation according to documentation (links upper):
 ```
@@ -134,18 +139,12 @@ E2guardian configuration
 e2guardianf1.conf:
 - sslmitm = on 
 
-:mag: There is an issue with the version of libpcre, therfore it is disabled during the compilation with '--enable-pcre=no'
+:mag: There is an issue with the version of libpcre, therefore it is disabled during the compilation with '--enable-pcre=no'
 
-# Using black list
+# Using black lists
 ## Black list with iptables
-Configure router networking (see network.sh)
-```
-apt-get install ipset
-ipset -N blacklist4 iphash --hashsize 4096 --maxelem 200000 --family inet
-ipset -N blacklist6 iphash --hashsize 4096 --maxelem 200000 --family inet6
-iptables -t nat -A PREROUTING -m set --match-set blacklist4 dst -j DNAT --to-destination 127.0.0.1
-ip6tables -t nat -A PREROUTING -m set --match-set blacklist6 dst -j DNAT --to-destination ::1
-```
+Configure router networking see network.sh.
+
 ## Black list with dnsmasq
 ```
 apt-get install dnsmasq
@@ -170,6 +169,7 @@ systemctl restart nginx
 
 # To do
 - Downloading and processing lists
+- Block blacklist with iptables
 - Distribute proxy configuration https://en.wikipedia.org/wiki/Web_Proxy_Auto-Discovery_Protocol
   - Using web server
   - Using DHCP
@@ -178,7 +178,7 @@ systemctl restart nginx
   - "NAT"
   - Router advertisement
 - Statistics and logs
-
-
-
+- Activate crypto acceleration for A20 on Lamobo R1
+- Configure HTTPS on nginx
+- Unify certificates (there is one for squid, one for e2guardian and an other for nginx !)
 
