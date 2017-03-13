@@ -183,4 +183,10 @@ systemctl restart nginx
 - Activate crypto acceleration for A20 on Lamobo R1
 - Configure HTTPS on nginx
 - Unify certificates (there is one for squid, one for e2guardian and an other for nginx !)
+- Use elyptic curves instead of RSA. ANSSI EC file parameter is [here](https://www.ssi.gouv.fr/uploads/IMG/der/FRP256v1.der)
+```
+openssl ecparam -list_curves
+openssl ecparam -out ec_key.pem -name sect571r1 -genkey 
+openssl req -new -key ec_key.pem -x509 -nodes -days 3650 -out cert.pem
+```
 
