@@ -6,7 +6,7 @@ Install Armbian image according the [Armbian documentation](https://docs.armbian
 
 The Lamobo R1/Banana Pi has a SATA port. /mnt/cache will be used to mount a partition of a SATA disk connected to this port. You should use a SSD. On a Raspberry you have to use the SD card or an external disk (recommended). Armbian can be installed on this disk instead of the SD card. This is the preferred way to do. Follow [this how-to](https://docs.armbian.com/User-Guide_Getting-Started/#how-to-install-to-emmc-nand-sata-usb).
 
-Add a partition as btrfs file system Archlinux doc about btrfs is nice [here](https://wiki.archlinux.org/index.php/Btrfs).
+Add a partition as btrfs file system. Archlinux doc about btrfs is nice [here](https://wiki.archlinux.org/index.php/Btrfs) for that.
 
 Show an available btrfs filesystem by using `blkid`, the UUID is used below (replace with your own UUID).
 ```
@@ -143,7 +143,9 @@ e2guardianf1.conf:
 
 # Using black lists
 ## Black list with iptables
-Configure router networking see network.sh.
+Configure router networking see network.sh. 
+
+In this scenario only 1 interface is connected and the proxy must be manually configured on each device either by configuring a proxy or by configuring the router as the default router of the device. Therefore one may access the internet by changing the configuration. Until the full configuration of the router is achieved this is recommended.
 
 ## Black list with dnsmasq
 ```
