@@ -150,12 +150,27 @@ chown -R dnsmasq  /mnt/cache/dnsmasq
 ```
 To `/etc/dnsmasq.conf` add line `hostsdir=/mnt/cache/dnsmasq/banner_add_hosts`.
 
-## Downloading
-## Processing
+## Send blacklisted hosts to your own webserver
+Requests to web sites referenced in dnsmasq will be resolved as a request to the local web server.  
+Installing nginx
+```
+apt-get install nginx 
+```
+Copy `blocked.html` to `/var/www/html/`.
+Add `error_page 404             /index.html;` to the http section of `/etc/nginx/nginx.conf`.
+```
+cd /var/www/html
+rm index.nginx-debian.html
+systemctl restart nginx
+```
+
+## Downloading lists
+## Processing lists
 
 # Distribute proxy configuration
-## Installing nginx
-`apt-get install nginx`
+## Using web server
+## Using DHCP
+## Using configuration file
 
 https://en.wikipedia.org/wiki/Web_Proxy_Auto-Discovery_Protocol
 
