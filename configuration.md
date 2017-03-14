@@ -154,11 +154,19 @@ mkdir -p /mnt/cache/dnsmasq/hosts
 touch /mnt/cache/dnsmasq/hosts/hosts
 chown -R dnsmasq  /mnt/cache/dnsmasq
 ```
-To `/etc/dnsmasq.conf` add line `addn-hosts=/mnt/cache/dnsmasq/hosts/hosts`.
+To `/etc/dnsmasq.conf` add lines
+```
+addn-hosts=/mnt/cache/dnsmasq/hosts/hosts
+resolv-file=/mnt/cache/dnsmasq/resolv.conf
+```
 
-Change /etc/resolv.conf in order to use dnsmasq for local name resolution too. This is mainly helpfull for testing purpose. The file will contain only 1 line.
+Change /etc/resolv.conf in order to use dnsmasq for local name resolution. This is mainly helpfull for testing purpose. The file will contain only 1 line.
 ```
 nameserver 127.0.0.1
+```
+Edit `/mnt/cache/dnsmasq/resolv.conf` with your ISP DNS server. Ex:
+```
+nameserver 212.27.40.241
 ```
 
 ## Send blacklisted hosts to your own webserver
@@ -177,8 +185,14 @@ systemctl restart nginx
 
 ## Generate black lists
 
+Edit crontab `sudo -u user crontab -e` and add line:
+```
+0 3 * * * /mnt/cache/lists/lists.sh >/dev/null 2>&1
+```
+This will refresh the black lists every days à 3am.
+
 # To do
-- Downloading and processing lists
+- Download and process lists
 - Block blacklist with iptables
 - Distribute proxy configuration https://en.wikipedia.org/wiki/Web_Proxy_Auto-Discovery_Protocol
   - Using web server
