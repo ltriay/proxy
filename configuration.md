@@ -151,9 +151,15 @@ In this scenario only 1 interface is connected and the proxy must be manually co
 ```
 apt-get install dnsmasq
 mkdir -p /mnt/cache/dnsmasq/hosts
+touch /mnt/cache/dnsmasq/hosts/hosts
 chown -R dnsmasq  /mnt/cache/dnsmasq
 ```
-To `/etc/dnsmasq.conf` add line `hostsdir=/mnt/cache/dnsmasq/banner_add_hosts`.
+To `/etc/dnsmasq.conf` add line `addn-hosts=/mnt/cache/dnsmasq/hosts/hosts`.
+
+Change /etc/resolv.conf in order to use dnsmasq for local name resolution too. This is mainly helpfull for testing purpose. The file will contain only 1 line.
+```
+nameserver 127.0.0.1
+```
 
 ## Send blacklisted hosts to your own webserver
 Requests to web sites referenced in dnsmasq will be resolved as a request to the local web server.  
@@ -161,13 +167,15 @@ Installing nginx
 ```
 apt-get install nginx 
 ```
-Copy `blocked.html` to `/var/www/html/`.
+Copy `blocked.html` to `/var/www/html/index.html`.
 Add `error_page 404             /index.html;` to the http section of `/etc/nginx/nginx.conf`.
 ```
 cd /var/www/html
 rm index.nginx-debian.html
 systemctl restart nginx
 ```
+
+## Generate black lists
 
 # To do
 - Downloading and processing lists
