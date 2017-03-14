@@ -191,6 +191,16 @@ Edit crontab `sudo -u user crontab -e` and add line:
 ```
 This will refresh the black lists every days à 3am.
 
+## Black lists and e2guardian
+`ln -s /mnt/cache/lists/blacklists/ /etc/e2guardian/lists/blacklists`
+
+Modify following lines in `/etc/e2guardian/lists/bannedsslsitelist` according to your needs.
+```
+bannedsitelist = '/mnt/cache/e2guardian/lists/hosts'
+bannedsslsitelist = '/mnt/cache/e2guardian/lists/hosts'
+```
+Restart e2guardian `systemctl restart e2guardian`
+
 # To do
 - Download and process lists
 - Block blacklist with iptables
