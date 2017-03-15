@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+Convert lists of hosts or IPs into format
+usable by iptables or /etc/hosts files.
+
+Usage:
+convert-lists.py -v example.txt
+"""
+
 import argparse
 import sys
 import ipaddress
@@ -11,15 +19,14 @@ iptables = []
 dns_names = re.compile('^[\w.-]+$')
 hosts_file = re.compile(' +')
 
-IPSET = """
+IPTABLES_BEFORE = """
 ipset -N blacklist4 iphash --hashsize 4096 --maxelem 200000 --family inet
 ipset -N blacklist6 iphash --hashsize 4096 --maxelem 200000 --family inet6
 """
 
-"""
-ipset -A myset 1.1.1.1
-ipset -A myset 2.2.2.2
-iptables -A INPUT -m set --set myset src -j DROP
+IPTABLES_AFTER ="""
+iptables -A INPUT -m set --set blacklist4 src -j DROP
+ip6tables -A INPUT -m set --set blacklist6 src -j DROP
 """
 
 def error(msg):
@@ -38,6 +45,14 @@ def is_ip_address(ip):
     raise
   return True
   
+def is_dns_name(host):
+  """Check if <host> is an host name ie not an urls
+  and not an IP address"""
+  if dns_names.match(aLine) is not None:
+    if not is_ip_address(ip):
+      return True
+  return False
+  
 def is_global(ip):
   """Emulate is_global for python 3.4<="""
   if ip.is_private: 
@@ -55,13 +70,17 @@ def is_global(ip):
 class filter_setup:
   def __init__(self, args):
     self.args = args
-    self.count_iptables = 0
-    self.count_hosts_file = 0
+    self.iptables_count = 0
+    self.hosts_count = 0
+    self.iptables = {}      # manage uniqness
+    self.hosts = {}
     
-    self.fd_iptables = open(self.args.iptables, "w")
     self.fd_hosts = open(self.args.hosts, "w")
+    self.fd_iptables = open(self.args.iptables, "w")
+    self.fd_iptables.write(IPTABLES_BEFORE)
     
   def __del__(self):
+    self.fd_iptables.write(IPTABLES_AFTER)
     self.fd_iptables.close()
     self.fd_hosts.close()
     
@@ -88,13 +107,24 @@ class filter_setup:
         if "." in aLine:
           self.write_hosts_file(aLine)
         else:
-          warning("Can't process keywords (keyword %s)." % aLine, self.args.verbose)
+          warning("Can't process '%s'." % aLine, self.args.verbose)
         
       # It's an URL ?
       elif len(aLine.split("/")) > 1:
         url = aLine.split("/")
-        if dns_names.match(url[0]) is not None:
-          warning("Not blacklisting %s domain name despite URL %s. " % (url[0], aLine), self.args.verbose)
+        
+        if is_ip_address(url[0]):
+          if self.args.url:
+            self.write_iptables(ipaddress.ip_address(url[0]))
+          else:
+            warning("Not blacklisting IP %s despite URL %s. Use --url option to do so." % (url[0], aLine), self.args.verbose)
+                  
+        elif dns_names.match(url[0]) is not None:
+          if self.args.url:
+            self.write_hosts_file(url[0])
+          else:
+            warning("Not blacklisting %s domain name despite URL %s. Use --url option to do so." % (url[0], aLine), self.args.verbose)
+            
         else:
           warning("Don't know what to do with line (url ?) '%s'." % aLine, self.args.verbose) 
 
@@ -117,8 +147,14 @@ class filter_setup:
         warning("Don't know what to do with line '%s'." % aLine, self.args.verbose)
         
   def write_iptables(self, ip):
+    if ip in self.iptables:
+      return
+
+    self.iptables[ip] = ""
+    self.iptables_count += 1
+
     if self.args.verbose:
-      print("iptables: %s redirect" % str(ip))
+      print("Iptables: %s" % str(ip))
     if ip.version == 4:
       self.fd_iptables.write("ipset -A blacklist4 %s\n" % str(ip))
     else:
@@ -126,8 +162,14 @@ class filter_setup:
     return
     
   def write_hosts_file(self, host):  
+    if host in self.hosts:
+      return
+
+    self.hosts[host] = ""
+  
+    self.hosts_count += 1  
     if self.args.verbose:
-      print("hosts: file %s %s" % (self.args.ip, host))
+      print("Hosts: %s %s" % (self.args.ip, host))
     self.fd_hosts.write("%s %s\n" % (self.args.ip, host))      
     return        
 
@@ -135,15 +177,16 @@ def read_args():
   parser = argparse.ArgumentParser(description='Convert files from filtering lists to generate iptables and /etc/hosts file.')
 
   parser.add_argument('-s', "--setup", dest='setup', action='store_true', help='setup hosts and iptables. Root access is mandatory.')
-  parser.add_argument('-e', '--error', dest='ip', default='127.0.0.1', help='IP where to redirect filtered IPs or web sites.')  
+  parser.add_argument('-w', '--server', dest='ip', default='127.0.0.1', help='IP of the web server where to redirect filtered IPs or web sites.\
+default is 127.0.0.1')  
   parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='IP where to redirect filtered IPs or web sites.')    
   parser.add_argument('-f', '--hosts', dest='hosts', default='hosts', help='Hosts files to write (default is "hosts").')
-  parser.add_argument('-i', '--iptables', dest='iptables', default='iptables.txt', help='Files to write iptables commands (default is "iptables.txt").')              
-  parser.add_argument('files', nargs=argparse.REMAINDER, help='files to convert')
+  parser.add_argument('-i', '--iptables', dest='iptables', default='iptables.txt', help='Files to write iptables commands (default is "iptables.txt").')
+  parser.add_argument('-u', '--url', dest='url', action='store_false', help='Block domain name when an URLs is in a list.\
+This will prevent the message "Not blocking domain name despite URL" to be displayed.')
+  parser.add_argument('files', type=str, nargs=argparse.REMAINDER, help='files to convert')
 
   args = parser.parse_args()
-  
-  print(args.setup, args.files)
   
   if len(args.files) < 1:
     error("Please provide at least 1 file to process")
@@ -161,5 +204,12 @@ def read_args():
 args = read_args()
 f = filter_setup(args)
 f.read_files()
+if args.verbose:
+  print("Host file written in file '%s'" % args.hosts)
+  print("Iptables commands written in file '%s'" % args.iptables)
+print("  Iptables lines generated %s" % f.iptables_count)
+print("  Hosts lines generated %s" % f.hosts_count)
+
+
 
 
