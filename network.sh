@@ -104,8 +104,8 @@ iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination $PROXY
 iptables -t nat -A POSTROUTING -j MASQUERADE
 iptables -t mangle -A PREROUTING -p tcp --dport $HTTP_PORT -j DROP
 iptables -t mangle -A PREROUTING -p tcp --dport $HTTPS_PORT -j DROP
-# Reject http/https connexions if nat is dissabled
-iptables -t mangle -A PREROUTING -p tcp --dport 80 -j REJECT
-iptables -t mangle -A PREROUTING -p tcp --dport 443 -j REJECT
+# Uncomment to reject http/https connexions if nat is dissabled
+# iptables -t mangle -A PREROUTING -p tcp --dport 80 -j DROP
+# iptables -t mangle -A PREROUTING -p tcp --dport 443 -j DROP
 
 # Missing IPv6
