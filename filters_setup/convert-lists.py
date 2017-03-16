@@ -72,6 +72,7 @@ class filter_setup:
     self.args = args
     self.iptables_count = 0
     self.hosts_count = 0
+    self.url_count = 0      # count url skipped when not using --url
     self.iptables = {}      # manage uniqness
     self.hosts = {}
     
@@ -117,12 +118,14 @@ class filter_setup:
           if self.args.url:
             self.write_iptables(ipaddress.ip_address(url[0]))
           else:
+            self.url_count += 1
             warning("Not blacklisting IP %s despite URL %s. Use --url option to do so." % (url[0], aLine), self.args.verbose)
                   
         elif dns_names.match(url[0]) is not None:
           if self.args.url:
             self.write_hosts_file(url[0])
           else:
+            self.url_count += 1
             warning("Not blacklisting %s domain name despite URL %s. Use --url option to do so." % (url[0], aLine), self.args.verbose)
             
         else:
@@ -182,7 +185,7 @@ default is 127.0.0.1')
   parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='IP where to redirect filtered IPs or web sites.')    
   parser.add_argument('-f', '--hosts', dest='hosts', default='hosts', help='Hosts files to write (default is "hosts").')
   parser.add_argument('-i', '--iptables', dest='iptables', default='iptables.txt', help='Files to write iptables commands (default is "iptables.txt").')
-  parser.add_argument('-u', '--url', dest='url', action='store_false', help='Block domain name when an URLs is in a list.\
+  parser.add_argument('-u', '--url', dest='url', action='store_true', default=False, help='Block domain name when an URLs is in a list.\
 This will prevent the message "Not blocking domain name despite URL" to be displayed.')
   parser.add_argument('files', type=str, nargs=argparse.REMAINDER, help='files to convert')
 
@@ -209,7 +212,6 @@ if args.verbose:
   print("Iptables commands written in file '%s'" % args.iptables)
 print("  Iptables lines generated %s" % f.iptables_count)
 print("  Hosts lines generated %s" % f.hosts_count)
-
-
-
+if f.url_count > 0:
+  print("  URL entries not converted to host name (therefore not blacklisted, see --url option) %s" % f.url_count )
 
