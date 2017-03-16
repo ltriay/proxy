@@ -193,7 +193,7 @@ This will refresh the black lists every days à 3am.
 
 Allow user `user` to restart dnsmasq. Add at the end of `/etc/sudoers` the line 
 ```
-%LimitedAdmins ALL=NOPASSWD: /bin/systemctl restart dnsmasq.service
+%user ALL=NOPASSWD: /bin/systemctl restart dnsmasq.service
 ```
 
 ## Black lists and e2guardian
