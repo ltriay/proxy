@@ -8,6 +8,8 @@ pyth(on.org
  go.org 
 #Comment
 # Comment comment
+.paf.com
+.paf.paf.com/toto
     
 python.org/help/ggg
 192.165.0.1/24

@@ -16,7 +16,7 @@ import re
 etchosts = ""
 iptables = []
 
-dns_names = re.compile('^[\w.-]+$')
+dns_names = re.compile('^\w[\w.-]+$')
 hosts_file = re.compile(' +')
 
 IPTABLES_BEFORE = """
