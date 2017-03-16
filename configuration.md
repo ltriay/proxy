@@ -191,6 +191,11 @@ Edit crontab `sudo -u user crontab -e` and add line:
 ```
 This will refresh the black lists every days à 3am.
 
+Allow user `user` to restart dnsmasq. Add at the end of `/etc/sudoers` the line 
+```
+%user ALL=NOPASSWD: /bin/systemctl restart dnsmasq.service
+```
+
 ## Black lists and e2guardian
 `ln -s /mnt/cache/lists/blacklists/ /etc/e2guardian/lists/blacklists`
 
