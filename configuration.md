@@ -150,13 +150,11 @@ In this scenario only 1 interface is connected and the proxy must be manually co
 ## Black list with dnsmasq
 ```
 apt-get install dnsmasq
-mkdir -p /mnt/cache/dnsmasq/hosts
-touch /mnt/cache/dnsmasq/hosts/hosts
-chown -R dnsmasq  /mnt/cache/dnsmasq
+chown dnsmasq  /mnt/cache/dnsmasq
 ```
 To `/etc/dnsmasq.conf` add lines
 ```
-addn-hosts=/mnt/cache/dnsmasq/hosts/hosts
+addn-hosts=/mnt/cache/lists/hosts
 resolv-file=/mnt/cache/dnsmasq/resolv.conf
 ```
 
