@@ -20,25 +20,21 @@ sleep 3
 echo "eth0 master br0"
 ip link set eth0 master br0
 
-echo "br0"
 ip link set up dev br0
-echo "lan1"
 ip link set up dev lan1 
-echo "lan2"
 ip link set up dev lan2
-echo "lan3"
 ip link set up dev lan3
-echo "lan4"
 ip link set up dev lan4
-echo "wan"
 ip link set up dev wan
 
-# Modify the nameservers according to your provider
-# This are the DNS of free.fr
-cat <<EOF > /etc/resolv.conf
-nameserver 212.27.40.241
-nameserver 212.27.40.240
-EOF
+ip route add default via 192.168.0.254 dev br0
+
+# Use dnsmasq to resolve host names 
+#cat <<EOF > /etc/resolv.conf
+#nameserver 127.0.0.1
+#nameserver 212.27.40.241
+#nameserver 212.27.40.240
+#EOF
 
 #ip addr
 bridge link show
@@ -53,17 +49,6 @@ net.ipv6.conf.default.forwarding=1
 net.ipv6.conf.all.forwarding=1
 EOF
 
-# Modify squid configuration
-
-
-#
-# Send http packets to squid
-#
-# http://wiki.squid-cache.org/ConfigExamples/Intercept/LinuxDnat
-#
-# The router must have a static IP address. For dynamic IPs use
-# http://wiki.squid-cache.org/ConfigExamples/Intercept/LinuxRedirect
-#
 # Router/proxy private
 PROXY_IP=192.168.0.1
 

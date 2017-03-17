@@ -136,6 +136,13 @@ E2guardian configuration
 - cacertificatepath = '/etc/pki/e2guardian/my_rootCA.crt'
 - caprivatekeypath = '/etc/pki/e2guardian/private_root.pem'
 - certprivatekeypath = '/etc/pki/e2guardian/private_cert.pem'
+
+Copy e2guardian.service in /etc/system/e2guardian.service
+
+```
+sudo systemctl enable e2guardian
+sudo systemctl start e2guardian
+```
 e2guardianf1.conf:
 - sslmitm = on 
 
@@ -205,7 +212,9 @@ bannedsslsitelist = '/mnt/cache/e2guardian/lists/hosts'
 Restart e2guardian `systemctl restart e2guardian`
 
 # To do
-- Download and process lists
+- Add more lists
+  - https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=1&mimetype=plaintext
+  - http://www.malwaredomainlist.com/hostslist/hosts.txt 
 - Block blacklist with iptables
 - Distribute proxy configuration https://en.wikipedia.org/wiki/Web_Proxy_Auto-Discovery_Protocol
   - Using web server
@@ -215,6 +224,7 @@ Restart e2guardian `systemctl restart e2guardian`
   - "NAT"
   - Router advertisement
 - Statistics and logs
+- Use DNScrypt ? https://www.dnscrypt.org/
 - Activate crypto acceleration for A20 on Lamobo R1
 - Configure HTTPS on nginx
 - Unify certificates (there is one for squid, one for e2guardian and an other for nginx !)
