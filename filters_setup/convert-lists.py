@@ -15,6 +15,7 @@ import re
 
 etchosts = ""
 iptables = []
+white_list = {"127.0.0.1":"", "::1":"", "localhost":""}
 
 dns_names = re.compile('^\w[\w.-]+$')
 hosts_file = re.compile(' +')
@@ -68,8 +69,9 @@ def is_global(ip):
   return True         
 
 class filter_setup:
-  def __init__(self, args):
+  def __init__(self, args, white_list=white_list):
     self.args = args
+    self.white_list = white_list
     self.iptables_count = 0
     self.hosts_count = 0
     self.url_count = 0      # count url skipped when not using --url
@@ -152,6 +154,8 @@ class filter_setup:
   def write_iptables(self, ip):
     if ip in self.iptables:
       return
+    if ip in self.white_list:
+      return
 
     self.iptables[ip] = ""
     self.iptables_count += 1
@@ -166,6 +170,8 @@ class filter_setup:
     
   def write_hosts_file(self, host):  
     if host in self.hosts:
+      return
+    if host in self.white_list:
       return
 
     self.hosts[host] = ""
