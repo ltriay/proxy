@@ -140,11 +140,21 @@ E2guardian configuration
 Copy e2guardian.service in /etc/system/e2guardian.service
 
 ```
+sudo apt-get install postfix
 sudo systemctl enable e2guardian
 sudo systemctl start e2guardian
 ```
 e2guardianf1.conf:
-- sslmitm = on 
+- sslmitm = on
+- onlymitmsslgrey = on
+- usesmtp = on
+- mailfrom = 'your mail'
+- contentadmin = 'your mail'
+- notifycontent = on
+- violations = 1
+- threshold = 300
+- Configure postfix according postfix documentation
+- Edit `/etc/e2guardian/lists/sslsiteregexplist` and put site names you want to check even if using https. Note that HSTS is an issue with MITM.
 
 :mag: There is an issue with the version of libpcre, therefore it is disabled during the compilation with '--enable-pcre=no'
 
